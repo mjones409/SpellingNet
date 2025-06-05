@@ -23,22 +23,30 @@ namespace SpellingNet
         private const int MAX_SPEED = 10;
         private const int MIN_SPEED = -10;
         private static int _currentSpeed = -3;
+        private static int _voiceIndex = 1;
 
         static void Main(string[] args)
         {
             CreateWindow();
+            bool firstRun = true;
             while (!WindowShouldClose())
             {
                 _mousePos = GetMousePosition();
                 BeginDrawing();
                 ClearBackground(Color.Beige);
                 DoWork();
+                if (firstRun)
+                {
+                    firstRun = false;
+                    Speak("WELCOME!");
+                }
                 EndDrawing();
             }
         }
 
         private static void DoWork()
         {
+            ChangeVoiceButton();
             CompletionReportLabel();
             SpeedUpButton();
             SpeedDownButton();
@@ -52,7 +60,14 @@ namespace SpellingNet
             SubmitButton();
         }
 
-
+        private static void ChangeVoiceButton()
+        {
+            if (ButtonClicked("Change Voice", (int)(WIDTH / 2), HEIGHT - 35))
+            {
+                _voiceIndex++;
+                Speak("Voice Changed");
+            }
+        }
 
         private static void CompletionReportLabel()
         {
@@ -280,8 +295,13 @@ namespace SpellingNet
             EndDrawing();
             using (SpeechSynthesizer synthesizer = new SpeechSynthesizer())
             {
+                var installedVoices = synthesizer.GetInstalledVoices();
+                if (_voiceIndex >= installedVoices.Count)
+                {
+                    _voiceIndex = 0;
+                }
                 // Configure the synthesizer
-                synthesizer.SelectVoiceByHints(VoiceGender.Female);
+                synthesizer.SelectVoice(installedVoices[_voiceIndex].VoiceInfo.Name);
 
                 synthesizer.Volume = 100;  // 0...100
                 synthesizer.Rate = _currentSpeed;    // -10...10
