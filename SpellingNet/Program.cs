@@ -10,8 +10,8 @@ namespace SpellingNet
     unsafe
     internal class Program
     {
-        private const int WIDTH = 1280;
-        private const int HEIGHT = 720;
+        private const int WIDTH = 1152;
+        private const int HEIGHT = 648;
         private const int FONT_SIZE = 20;
         private const int FONT_SIZE_BIG = 20 * 2;
         private static Vector2 _mousePos = Vector2.Zero;
@@ -163,7 +163,7 @@ namespace SpellingNet
         private static void UploadedFileLabel()
         {
             int textSize = MeasureText(_uploadedFilePath, FONT_SIZE);
-            DrawText(_uploadedFilePath, WIDTH / 2 - textSize / 2, 50, FONT_SIZE, Color.RayWhite);
+            DrawText(_uploadedFilePath, WIDTH / 2 - textSize / 2, 20, FONT_SIZE, Color.RayWhite);
         }
 
         private static void DragDrop()
@@ -185,11 +185,12 @@ namespace SpellingNet
                             {
                                 line += _uploadedFileLines[i][j];
                             }
-
                         }
                         _uploadedFileLines[i] = line.Trim().ToUpper();
                     }
-                    _currentList = _uploadedFileLines.ToList();
+                    _currentList = _uploadedFileLines.ToList().Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+                    _uploadedFileLines = _currentList.ToArray();
+                    Speak(_currentList.First());
                 }
             }
         }
@@ -221,6 +222,7 @@ namespace SpellingNet
                 else
                 {
                     Speak("List randomized");
+                    Speak(_currentList.First());
                 }
             }
         }
@@ -237,6 +239,7 @@ namespace SpellingNet
                 else
                 {
                     Speak("List reset");
+                    Speak(_currentList.First());
                 }
             }
         }
