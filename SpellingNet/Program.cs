@@ -10,18 +10,19 @@ namespace SpellingNet
     unsafe
     internal class Program
     {
-        const int WIDTH = 1280;
-        const int HEIGHT = 720;
-        const int FONT_SIZE = 20;
-        const int FONT_SIZE_BIG = 20 * 2;
+        private const int WIDTH = 1280;
+        private const int HEIGHT = 720;
+        private const int FONT_SIZE = 20;
+        private const int FONT_SIZE_BIG = 20 * 2;
         private static Vector2 _mousePos = Vector2.Zero;
         private static string _uploadedFilePath = "Drag and drop a file to start.";
         private static string[] _uploadedFileLines = [];
         private static List<string> _currentList = [];
         private static Random _rand = new Random(Guid.NewGuid().GetHashCode());
-        private static bool _speaking = false;
         private static string _inputText = string.Empty;
-
+        private const int MAX_SPEED = 10;
+        private const int MIN_SPEED = -10;
+        private static int _currentSpeed = -3;
 
         static void Main(string[] args)
         {
@@ -38,6 +39,10 @@ namespace SpellingNet
 
         private static void DoWork()
         {
+            CompletionReportLabel();
+            SpeedUpButton();
+            SpeedDownButton();
+            SpeedLabel();
             DragDrop();
             UploadedFileLabel();
             ResetButton();
@@ -47,9 +52,33 @@ namespace SpellingNet
             SubmitButton();
         }
 
+
+
+        private static void CompletionReportLabel()
+        {
+            DrawText($"{_uploadedFileLines.Length - _currentList.Count} / {_uploadedFileLines.Length} Complete", 25, HEIGHT - 50, FONT_SIZE_BIG, Color.Black);
+        }
+        private static void SpeedUpButton()
+        {
+            if (ButtonClicked("FAST", (int)(WIDTH - 50), HEIGHT - 125))
+            {
+                _currentSpeed = _currentSpeed >= MAX_SPEED ? MAX_SPEED : _currentSpeed + 1;
+            }
+        }
+        private static void SpeedDownButton()
+        {
+            if (ButtonClicked("SLOW", (int)(WIDTH - 50), HEIGHT - 50))
+            {
+                _currentSpeed = _currentSpeed <= MIN_SPEED ? MIN_SPEED : _currentSpeed - 1;
+            }
+        }
+        private static void SpeedLabel()
+        {
+            DrawText(_currentSpeed.ToString(), WIDTH - 75, HEIGHT - 105, FONT_SIZE_BIG, Color.Black);
+        }
         private static void SubmitButton()
         {
-            if (ButtonClicked("Submit", (int)(WIDTH / 2), HEIGHT - 250))
+            if (ButtonClicked("Submit", (int)(WIDTH / 2), HEIGHT - 250) || IsKeyPressed(KeyboardKey.Enter))
             {
                 if (_currentList.Any())
                 {
@@ -63,6 +92,10 @@ namespace SpellingNet
                         {
                             Speak("Good Job! You Won!");
                         }
+                        else
+                        {
+                            Speak(_currentList.First());
+                        }
                     }
                     else
                     {
@@ -70,8 +103,13 @@ namespace SpellingNet
                         _currentList.Add(_currentList.First());
                         _currentList.RemoveAt(0);
                         Speak("Incorrect");
+                        Speak(_currentList.First());
                     }
                     _inputText = string.Empty;
+                }
+                else
+                {
+                    Speak("Drag and drop a file to start");
                 }
             }
         }
@@ -161,6 +199,14 @@ namespace SpellingNet
             if (ButtonClicked("Randomize List", (int)(WIDTH / 2 + 100), HEIGHT / 2 - 250))
             {
                 RandomizeListInPlace(_currentList);
+                if (!_currentList.Any())
+                {
+                    Speak("Drag and drop a file to start");
+                }
+                else
+                {
+                    Speak("List randomized");
+                }
             }
         }
 
@@ -169,6 +215,14 @@ namespace SpellingNet
             if (ButtonClicked("Reset List", (int)(WIDTH / 2 - 100), HEIGHT / 2 - 250))
             {
                 _currentList = _uploadedFileLines.ToList();
+                if (!_currentList.Any())
+                {
+                    Speak("Drag and drop a file to start");
+                }
+                else
+                {
+                    Speak("List reset");
+                }
             }
         }
 
@@ -230,7 +284,7 @@ namespace SpellingNet
                 synthesizer.SelectVoiceByHints(VoiceGender.Female);
 
                 synthesizer.Volume = 100;  // 0...100
-                synthesizer.Rate = -3;    // -10...10
+                synthesizer.Rate = _currentSpeed;    // -10...10
 
                 // Speak the text
                 synthesizer.Speak(text);
